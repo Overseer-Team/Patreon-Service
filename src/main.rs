@@ -26,14 +26,14 @@ enum PatreonTier {
 #[derive(serde::Serialize, Clone, Copy)]
 struct PatreonTierInfo {
     tier: u8,
-    entitled_servers: u8,
+    entitled_guilds: u8,
 }
 
 impl PatreonTierInfo {
     fn fake() -> Self {
         Self {
             tier: u8::MAX,
-            entitled_servers: u8::MAX,
+            entitled_guilds: u8::MAX,
         }
     }
 }
@@ -41,10 +41,13 @@ impl PatreonTierInfo {
 impl From<PatreonTier> for PatreonTierInfo {
     fn from(tier: PatreonTier) -> Self {
         Self {
-            tier: 0, // Future tiers with higher privileges
-            entitled_servers: match tier {
-                PatreonTier::Basic => 2,
-                PatreonTier::Extra => 5,
+            tier: match tier {
+                PatreonTier::Basic => 0,
+                PatreonTier::Extra => 1
+            },
+            entitled_guilds: match tier {
+                PatreonTier::Basic => 1,
+                PatreonTier::Extra => 3
             }
         }
     }
@@ -179,10 +182,10 @@ async fn main() -> Result<()> {
     fill_members().await?;
 
     let app = axum::Router::new()
-        .route("/members/:member_id", axum::routing::get(fetch_member))
-        .route("/refresh", axum::routing::post(refresh_members))
-        .route("/patreon", axum::routing::post(webhook_recv))
-        .route("/members", axum::routing::get(fetch_members));
+        .route("/patreon/members/:member_id", axum::routing::get(fetch_member))
+        .route("/patreon/refresh", axum::routing::post(refresh_members))
+        .route("/patreon/webhook", axum::routing::post(webhook_recv))
+        .route("/patreon/members", axum::routing::get(fetch_members));
 
     tracing::info!("Binding to {bind_address}!");
     axum::Server::bind(&bind_address)
